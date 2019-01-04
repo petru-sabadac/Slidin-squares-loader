@@ -1,15 +1,13 @@
 package com.sabadac.slidinsquaresloader
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.AnimatorSet
-import android.animation.ValueAnimator
+import android.animation.*
 import android.content.Context
 import android.graphics.*
+import android.support.v4.content.ContextCompat
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
-import android.view.animation.LinearInterpolator
+import android.view.animation.AccelerateDecelerateInterpolator
 
 class SlidinSquaresLoader @JvmOverloads constructor(
     context: Context,
@@ -21,19 +19,20 @@ class SlidinSquaresLoader @JvmOverloads constructor(
     private val squareDistance = 8
     private val squareCornerRadius = 10
     private val numberOfSquares = 6
-    private val duration = 400L
+    private val duration = 200L
     private val canvasSide = numberOfSquares * dpToPx(squareSide * 2 + squareDistance, context)
     private val bitmap = Bitmap.createBitmap(canvasSide.toInt(), canvasSide.toInt(), Bitmap.Config.ARGB_8888)
     private val bitmapCanvas = Canvas(bitmap)
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val positions = Array(12) { RectF() }
-    private val squares = Array(12) { RectF() }
+    private val squares = Array(5) { RectF() }
+    private val colors = IntArray(5)
+    private val initialColors = IntArray(5)
 
     init {
         initColorsAndPositions()
         restartSquaresPositions()
-
 
         val animatorSet = AnimatorSet()
         animatorSet.playSequentially(
@@ -59,7 +58,6 @@ class SlidinSquaresLoader @JvmOverloads constructor(
             }
         })
         animatorSet.start()
-        paint.color = Color.RED
     }
 
     private fun initColorsAndPositions() {
@@ -145,20 +143,29 @@ class SlidinSquaresLoader @JvmOverloads constructor(
         positions[11].top = (bitmap.height + dpToPx(squareSide, context)) / 2f + dpToPx(squareDistance, context)
         positions[11].bottom = (bitmap.height + dpToPx(squareSide, context)) / 2f + dpToPx(squareSide, context) +
                 dpToPx(squareDistance, context)
+
+        initialColors[0] = ContextCompat.getColor(context, R.color.firstSquareColor)
+        initialColors[1] = ContextCompat.getColor(context, R.color.secondSquareColor)
+        initialColors[2] = ContextCompat.getColor(context, R.color.thirdSquareColor)
+        initialColors[3] = ContextCompat.getColor(context, R.color.fourthSquareColor)
+        initialColors[4] = ContextCompat.getColor(context, R.color.firstSquareColor)
     }
 
     private fun restartSquaresPositions() {
         for (i in 4..7) {
             squares[i - 4].set(positions[i])
+            colors[i - 4] = initialColors[i - 4]
         }
         squares[4].set(positions[1])
+        colors[4] = initialColors[4]
     }
 
     private fun moveFromTo(from: IntArray, to: IntArray, which: IntArray, withDelay: Long = 0L): ValueAnimator {
         val valueAnimator = ValueAnimator.ofFloat(0f, 1f)
+        val colorEvaluator = ArgbEvaluator()
         valueAnimator.duration = duration
         valueAnimator.startDelay = withDelay
-        valueAnimator.interpolator = LinearInterpolator()
+        valueAnimator.interpolator = AccelerateDecelerateInterpolator()
         valueAnimator.addUpdateListener(object : ValueAnimator.AnimatorUpdateListener {
             override fun onAnimationUpdate(animation: ValueAnimator?) {
                 val fraction = animation!!.animatedFraction
@@ -166,6 +173,12 @@ class SlidinSquaresLoader @JvmOverloads constructor(
                 from.forEachIndexed { index, fromValue ->
                     val i = which[index]
                     val toValue = to[index]
+
+                    colors[i] = colorEvaluator.evaluate(
+                        fraction,
+                        initialColors[fromValue % 4],
+                        initialColors[toValue % 4]
+                    ) as Int
 
                     squares[i].left = positions[fromValue].left + fraction *
                             (positions[toValue].left - positions[fromValue].left)
@@ -192,6 +205,7 @@ class SlidinSquaresLoader @JvmOverloads constructor(
         bitmapCanvas.restore()
 
         squares.forEachIndexed { index, position ->
+            paint.color = colors[index]
             bitmapCanvas.drawRoundRect(
                 position,
                 dpToPx(squareCornerRadius / 2, context),
