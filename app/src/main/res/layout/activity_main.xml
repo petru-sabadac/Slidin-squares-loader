@@ -9,8 +9,8 @@
         tools:context=".MainActivity">
 
     <com.sabadac.slidinsquaresloader.SlidinSquaresLoader
-            android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:layout_width="200dp"
+            android:layout_height="160dp"
             android:id="@+id/slidinSquaresLoader"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
