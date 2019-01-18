@@ -2,12 +2,13 @@ package com.sabadac.slidinsquaresloader
 
 import android.animation.*
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.*
 import android.support.v4.content.ContextCompat
+import android.support.v4.view.animation.PathInterpolatorCompat
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
-import android.view.animation.AccelerateDecelerateInterpolator
 
 class SlidinSquaresLoader @JvmOverloads constructor(
     context: Context,
@@ -18,10 +19,11 @@ class SlidinSquaresLoader @JvmOverloads constructor(
     private val squareSide = 40
     private val squareDistance = 8
     private val squareCornerRadius = 10
-    private val numberOfSquares = 6
-    private val duration = 200L
-    private val canvasSide = numberOfSquares * dpToPx(squareSide * 2 + squareDistance, context)
-    private val bitmap = Bitmap.createBitmap(canvasSide.toInt(), canvasSide.toInt(), Bitmap.Config.ARGB_8888)
+    private val numberOfSquares = 4
+    private val duration = 210L
+    private val canvasWidth = numberOfSquares * dpToPx(squareSide + squareDistance)
+    private val canvasHeight = 3 * dpToPx(squareSide + squareDistance)
+    private val bitmap = Bitmap.createBitmap(canvasWidth.toInt(), canvasHeight.toInt(), Bitmap.Config.ARGB_8888)
     private val bitmapCanvas = Canvas(bitmap)
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -29,12 +31,12 @@ class SlidinSquaresLoader @JvmOverloads constructor(
     private val squares = Array(5) { RectF() }
     private val colors = IntArray(5)
     private val initialColors = IntArray(5)
+    private val animatorSet = AnimatorSet()
 
     init {
         initColorsAndPositions()
         restartSquaresPositions()
 
-        val animatorSet = AnimatorSet()
         animatorSet.playSequentially(
             moveFromTo(intArrayOf(1), intArrayOf(2), intArrayOf(4)),
             moveFromTo(intArrayOf(2, 6), intArrayOf(6, 10), intArrayOf(4, 2)),
@@ -60,86 +62,92 @@ class SlidinSquaresLoader @JvmOverloads constructor(
         animatorSet.start()
     }
 
+    override fun clearAnimation() {
+        animatorSet.removeAllListeners()
+        animatorSet.cancel()
+        super.clearAnimation()
+    }
+
     private fun initColorsAndPositions() {
-        positions[0].left = bitmap.width / 2f - dpToPx(squareSide, context) - dpToPx(squareDistance, context) / 2f -
-                dpToPx(squareDistance, context) - dpToPx(squareSide, context)
-        positions[0].right = bitmap.width / 2f - dpToPx(squareDistance, context) / 2f -
-                dpToPx(squareDistance, context) - dpToPx(squareSide, context)
-        positions[0].top = (bitmap.height - dpToPx(squareSide, context)) / 2f - dpToPx(squareSide, context) -
-                dpToPx(squareDistance, context)
-        positions[0].bottom = (bitmap.height - dpToPx(squareSide, context)) / 2f - dpToPx(squareDistance, context)
+        positions[0].left = bitmap.width / 2f - dpToPx(squareSide) - dpToPx(squareDistance) / 2f -
+                dpToPx(squareDistance) - dpToPx(squareSide)
+        positions[0].right = bitmap.width / 2f - dpToPx(squareDistance) / 2f -
+                dpToPx(squareDistance) - dpToPx(squareSide)
+        positions[0].top = (bitmap.height - dpToPx(squareSide)) / 2f - dpToPx(squareSide) -
+                dpToPx(squareDistance)
+        positions[0].bottom = (bitmap.height - dpToPx(squareSide)) / 2f - dpToPx(squareDistance)
 
-        positions[1].left = bitmap.width / 2f - dpToPx(squareSide, context) - dpToPx(squareDistance, context) / 2f
-        positions[1].right = bitmap.width / 2f - dpToPx(squareDistance, context) / 2f
-        positions[1].top = (bitmap.height - dpToPx(squareSide, context)) / 2f - dpToPx(squareSide, context) -
-                dpToPx(squareDistance, context)
-        positions[1].bottom = (bitmap.height - dpToPx(squareSide, context)) / 2f - dpToPx(squareDistance, context)
+        positions[1].left = bitmap.width / 2f - dpToPx(squareSide) - dpToPx(squareDistance) / 2f
+        positions[1].right = bitmap.width / 2f - dpToPx(squareDistance) / 2f
+        positions[1].top = (bitmap.height - dpToPx(squareSide)) / 2f - dpToPx(squareSide) -
+                dpToPx(squareDistance)
+        positions[1].bottom = (bitmap.height - dpToPx(squareSide)) / 2f - dpToPx(squareDistance)
 
-        positions[2].left = bitmap.width / 2f + dpToPx(squareDistance, context) / 2f
-        positions[2].right = bitmap.width / 2f + dpToPx(squareDistance, context) / 2f + dpToPx(squareSide, context)
-        positions[2].top = (bitmap.height - dpToPx(squareSide, context)) / 2f - dpToPx(squareSide, context) -
-                dpToPx(squareDistance, context)
-        positions[2].bottom = (bitmap.height - dpToPx(squareSide, context)) / 2f - dpToPx(squareDistance, context)
+        positions[2].left = bitmap.width / 2f + dpToPx(squareDistance) / 2f
+        positions[2].right = bitmap.width / 2f + dpToPx(squareDistance) / 2f + dpToPx(squareSide)
+        positions[2].top = (bitmap.height - dpToPx(squareSide)) / 2f - dpToPx(squareSide) -
+                dpToPx(squareDistance)
+        positions[2].bottom = (bitmap.height - dpToPx(squareSide)) / 2f - dpToPx(squareDistance)
 
-        positions[3].left = bitmap.width / 2f + dpToPx(squareDistance, context) / 2f + dpToPx(squareDistance, context) +
-                dpToPx(squareSide, context)
-        positions[3].right = bitmap.width / 2f + dpToPx(squareSide, context) + dpToPx(squareDistance, context) / 2f +
-                dpToPx(squareDistance, context) + dpToPx(squareSide, context)
-        positions[3].top = (bitmap.height - dpToPx(squareSide, context)) / 2f - dpToPx(squareSide, context) -
-                dpToPx(squareDistance, context)
-        positions[3].bottom = (bitmap.height - dpToPx(squareSide, context)) / 2f - dpToPx(squareDistance, context)
+        positions[3].left = bitmap.width / 2f + dpToPx(squareDistance) / 2f + dpToPx(squareDistance) +
+                dpToPx(squareSide)
+        positions[3].right = bitmap.width / 2f + dpToPx(squareSide) + dpToPx(squareDistance) / 2f +
+                dpToPx(squareDistance) + dpToPx(squareSide)
+        positions[3].top = (bitmap.height - dpToPx(squareSide)) / 2f - dpToPx(squareSide) -
+                dpToPx(squareDistance)
+        positions[3].bottom = (bitmap.height - dpToPx(squareSide)) / 2f - dpToPx(squareDistance)
 
-        positions[4].left = bitmap.width / 2f - dpToPx(squareSide, context) - dpToPx(squareDistance, context) / 2f -
-                dpToPx(squareDistance, context) - dpToPx(squareSide, context)
-        positions[4].right = bitmap.width / 2f - dpToPx(squareDistance, context) / 2f -
-                dpToPx(squareDistance, context) - dpToPx(squareSide, context)
-        positions[4].top = (bitmap.height - dpToPx(squareSide, context)) / 2f
-        positions[4].bottom = (bitmap.height + dpToPx(squareSide, context)) / 2f
+        positions[4].left = bitmap.width / 2f - dpToPx(squareSide) - dpToPx(squareDistance) / 2f -
+                dpToPx(squareDistance) - dpToPx(squareSide)
+        positions[4].right = bitmap.width / 2f - dpToPx(squareDistance) / 2f -
+                dpToPx(squareDistance) - dpToPx(squareSide)
+        positions[4].top = (bitmap.height - dpToPx(squareSide)) / 2f
+        positions[4].bottom = (bitmap.height + dpToPx(squareSide)) / 2f
 
-        positions[5].left = bitmap.width / 2f - dpToPx(squareSide, context) - dpToPx(squareDistance, context) / 2f
-        positions[5].right = bitmap.width / 2f - dpToPx(squareDistance, context) / 2f
-        positions[5].top = (bitmap.height - dpToPx(squareSide, context)) / 2f
-        positions[5].bottom = (bitmap.height + dpToPx(squareSide, context)) / 2f
+        positions[5].left = bitmap.width / 2f - dpToPx(squareSide) - dpToPx(squareDistance) / 2f
+        positions[5].right = bitmap.width / 2f - dpToPx(squareDistance) / 2f
+        positions[5].top = (bitmap.height - dpToPx(squareSide)) / 2f
+        positions[5].bottom = (bitmap.height + dpToPx(squareSide)) / 2f
 
-        positions[6].left = bitmap.width / 2f + dpToPx(squareDistance, context) / 2f
-        positions[6].right = bitmap.width / 2f + dpToPx(squareDistance, context) / 2f + dpToPx(squareSide, context)
-        positions[6].top = (bitmap.height - dpToPx(squareSide, context)) / 2f
-        positions[6].bottom = (bitmap.height + dpToPx(squareSide, context)) / 2f
+        positions[6].left = bitmap.width / 2f + dpToPx(squareDistance) / 2f
+        positions[6].right = bitmap.width / 2f + dpToPx(squareDistance) / 2f + dpToPx(squareSide)
+        positions[6].top = (bitmap.height - dpToPx(squareSide)) / 2f
+        positions[6].bottom = (bitmap.height + dpToPx(squareSide)) / 2f
 
-        positions[7].left = bitmap.width / 2f + dpToPx(squareDistance, context) / 2f + dpToPx(squareDistance, context) +
-                dpToPx(squareSide, context)
-        positions[7].right = bitmap.width / 2f + dpToPx(squareSide, context) + dpToPx(squareDistance, context) / 2f +
-                dpToPx(squareDistance, context) + dpToPx(squareSide, context)
-        positions[7].top = (bitmap.height - dpToPx(squareSide, context)) / 2f
-        positions[7].bottom = (bitmap.height + dpToPx(squareSide, context)) / 2f
+        positions[7].left = bitmap.width / 2f + dpToPx(squareDistance) / 2f + dpToPx(squareDistance) +
+                dpToPx(squareSide)
+        positions[7].right = bitmap.width / 2f + dpToPx(squareSide) + dpToPx(squareDistance) / 2f +
+                dpToPx(squareDistance) + dpToPx(squareSide)
+        positions[7].top = (bitmap.height - dpToPx(squareSide)) / 2f
+        positions[7].bottom = (bitmap.height + dpToPx(squareSide)) / 2f
 
-        positions[8].left = bitmap.width / 2f - dpToPx(squareSide, context) - dpToPx(squareDistance, context) / 2f -
-                dpToPx(squareDistance, context) - dpToPx(squareSide, context)
-        positions[8].right = bitmap.width / 2f - dpToPx(squareDistance, context) / 2f -
-                dpToPx(squareDistance, context) - dpToPx(squareSide, context)
-        positions[8].top = (bitmap.height + dpToPx(squareSide, context)) / 2f + dpToPx(squareDistance, context)
-        positions[8].bottom = (bitmap.height + dpToPx(squareSide, context)) / 2f + dpToPx(squareSide, context) +
-                dpToPx(squareDistance, context)
+        positions[8].left = bitmap.width / 2f - dpToPx(squareSide) - dpToPx(squareDistance) / 2f -
+                dpToPx(squareDistance) - dpToPx(squareSide)
+        positions[8].right = bitmap.width / 2f - dpToPx(squareDistance) / 2f -
+                dpToPx(squareDistance) - dpToPx(squareSide)
+        positions[8].top = (bitmap.height + dpToPx(squareSide)) / 2f + dpToPx(squareDistance)
+        positions[8].bottom = (bitmap.height + dpToPx(squareSide)) / 2f + dpToPx(squareSide) +
+                dpToPx(squareDistance)
 
-        positions[9].left = bitmap.width / 2f - dpToPx(squareSide, context) - dpToPx(squareDistance, context) / 2f
-        positions[9].right = bitmap.width / 2f - dpToPx(squareDistance, context) / 2f
-        positions[9].top = (bitmap.height + dpToPx(squareSide, context)) / 2f + dpToPx(squareDistance, context)
-        positions[9].bottom = (bitmap.height + dpToPx(squareSide, context)) / 2f + dpToPx(squareSide, context) +
-                dpToPx(squareDistance, context)
+        positions[9].left = bitmap.width / 2f - dpToPx(squareSide) - dpToPx(squareDistance) / 2f
+        positions[9].right = bitmap.width / 2f - dpToPx(squareDistance) / 2f
+        positions[9].top = (bitmap.height + dpToPx(squareSide)) / 2f + dpToPx(squareDistance)
+        positions[9].bottom = (bitmap.height + dpToPx(squareSide)) / 2f + dpToPx(squareSide) +
+                dpToPx(squareDistance)
 
-        positions[10].left = bitmap.width / 2f + dpToPx(squareDistance, context) / 2f
-        positions[10].right = bitmap.width / 2f + dpToPx(squareDistance, context) / 2f + dpToPx(squareSide, context)
-        positions[10].top = (bitmap.height + dpToPx(squareSide, context)) / 2f + dpToPx(squareDistance, context)
-        positions[10].bottom = (bitmap.height + dpToPx(squareSide, context)) / 2f + dpToPx(squareSide, context) +
-                dpToPx(squareDistance, context)
+        positions[10].left = bitmap.width / 2f + dpToPx(squareDistance) / 2f
+        positions[10].right = bitmap.width / 2f + dpToPx(squareDistance) / 2f + dpToPx(squareSide)
+        positions[10].top = (bitmap.height + dpToPx(squareSide)) / 2f + dpToPx(squareDistance)
+        positions[10].bottom = (bitmap.height + dpToPx(squareSide)) / 2f + dpToPx(squareSide) +
+                dpToPx(squareDistance)
 
-        positions[11].left = bitmap.width / 2f + dpToPx(squareDistance, context) / 2f +
-                dpToPx(squareDistance, context) + dpToPx(squareSide, context)
-        positions[11].right = bitmap.width / 2f + dpToPx(squareDistance, context) / 2f + dpToPx(squareSide, context) +
-                dpToPx(squareDistance, context) + dpToPx(squareSide, context)
-        positions[11].top = (bitmap.height + dpToPx(squareSide, context)) / 2f + dpToPx(squareDistance, context)
-        positions[11].bottom = (bitmap.height + dpToPx(squareSide, context)) / 2f + dpToPx(squareSide, context) +
-                dpToPx(squareDistance, context)
+        positions[11].left = bitmap.width / 2f + dpToPx(squareDistance) / 2f +
+                dpToPx(squareDistance) + dpToPx(squareSide)
+        positions[11].right = bitmap.width / 2f + dpToPx(squareDistance) / 2f + dpToPx(squareSide) +
+                dpToPx(squareDistance) + dpToPx(squareSide)
+        positions[11].top = (bitmap.height + dpToPx(squareSide)) / 2f + dpToPx(squareDistance)
+        positions[11].bottom = (bitmap.height + dpToPx(squareSide)) / 2f + dpToPx(squareSide) +
+                dpToPx(squareDistance)
 
         initialColors[0] = ContextCompat.getColor(context, R.color.firstSquareColor)
         initialColors[1] = ContextCompat.getColor(context, R.color.secondSquareColor)
@@ -162,34 +170,32 @@ class SlidinSquaresLoader @JvmOverloads constructor(
         val colorEvaluator = ArgbEvaluator()
         valueAnimator.duration = duration
         valueAnimator.startDelay = withDelay
-        valueAnimator.interpolator = AccelerateDecelerateInterpolator()
-        valueAnimator.addUpdateListener(object : ValueAnimator.AnimatorUpdateListener {
-            override fun onAnimationUpdate(animation: ValueAnimator?) {
-                val fraction = animation!!.animatedFraction
+        valueAnimator.interpolator = PathInterpolatorCompat.create(0.42f, 0f, 0.58f, 1f)
+        valueAnimator.addUpdateListener { animation ->
+            val fraction = animation.animatedFraction
 
-                from.forEachIndexed { index, fromValue ->
-                    val i = which[index]
-                    val toValue = to[index]
+            from.forEachIndexed { index, fromValue ->
+                val i = which[index]
+                val toValue = to[index]
 
-                    colors[i] = colorEvaluator.evaluate(
-                        fraction,
-                        initialColors[fromValue % 4],
-                        initialColors[toValue % 4]
-                    ) as Int
+                colors[i] = colorEvaluator.evaluate(
+                    fraction,
+                    initialColors[fromValue % 4],
+                    initialColors[toValue % 4]
+                ) as Int
 
-                    squares[i].left = positions[fromValue].left + fraction *
-                            (positions[toValue].left - positions[fromValue].left)
-                    squares[i].right = positions[fromValue].right + fraction *
-                            (positions[toValue].right - positions[fromValue].right)
-                    squares[i].top = positions[fromValue].top + fraction *
-                            (positions[toValue].top - positions[fromValue].top)
-                    squares[i].bottom = positions[fromValue].bottom + fraction *
-                            (positions[toValue].bottom - positions[fromValue].bottom)
-                }
-
-                invalidate()
+                squares[i].left = positions[fromValue].left + fraction *
+                        (positions[toValue].left - positions[fromValue].left)
+                squares[i].right = positions[fromValue].right + fraction *
+                        (positions[toValue].right - positions[fromValue].right)
+                squares[i].top = positions[fromValue].top + fraction *
+                        (positions[toValue].top - positions[fromValue].top)
+                squares[i].bottom = positions[fromValue].bottom + fraction *
+                        (positions[toValue].bottom - positions[fromValue].bottom)
             }
-        })
+
+            invalidate()
+        }
         return valueAnimator
     }
 
@@ -205,8 +211,8 @@ class SlidinSquaresLoader @JvmOverloads constructor(
             paint.color = colors[index]
             bitmapCanvas.drawRoundRect(
                 position,
-                dpToPx(squareCornerRadius / 2, context),
-                dpToPx(squareCornerRadius / 2, context),
+                dpToPx(squareCornerRadius / 2),
+                dpToPx(squareCornerRadius / 2),
                 paint
             )
         }
@@ -216,7 +222,7 @@ class SlidinSquaresLoader @JvmOverloads constructor(
         canvas?.drawBitmap(bitmap, (width - bitmap.width) / 2f, (height - bitmap.height) / 2f, bitmapPaint)
     }
 
-    private fun dpToPx(dp: Int, context: Context): Float =
-        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(), context.resources.displayMetrics)
+    private fun dpToPx(dp: Int): Float =
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(), Resources.getSystem().displayMetrics)
 
 }
